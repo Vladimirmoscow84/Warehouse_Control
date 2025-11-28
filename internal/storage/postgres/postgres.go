@@ -1,1 +1,49 @@
 package postgres
+
+import (
+	"fmt"
+	"log"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
+)
+
+type repoRoles interface{}
+
+type repoUsers interface{}
+
+type repoItmes interface{}
+
+type repoItemHistory interface{}
+
+type Postgres struct {
+	DB *sqlx.DB
+}
+
+func New(databaseURI string) (*Postgres, error) {
+	db, err := sqlx.Connect("sqlx", databaseURI)
+	if err != nil {
+		return nil, fmt.Errorf("[postgres] failed to connect to DB: %w", err)
+	}
+	db.SetMaxOpenConns(30)
+	db.SetMaxIdleConns(30)
+
+	err = db.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("[postgres] ping is failed: %w", err)
+	}
+	log.Println("[postgres] successfull connect to DB")
+	return &Postgres{
+		DB: db,
+	}, nil
+}
+
+func (p *Postgres) Close() error {
+	err := p.DB.Close()
+	if err != nil {
+		log.Printf("[postgres] failed to close DB connection: %v", err)
+		return err
+	}
+	log.Println("[postgres] connection closed")
+	return nil
+}
