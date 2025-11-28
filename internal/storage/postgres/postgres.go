@@ -1,20 +1,40 @@
 package postgres
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"time"
 
+	"github.com/Vladimirmoscow84/Warehouse_Control/internal/model"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 )
 
-type repoRoles interface{}
+type repoRoles interface {
+	CreateRole(ctx context.Context, r *model.Role) (int, error)
+	GetRole(ctx context.Context, id int) (*model.Role, error)
+	ListRoles(ctx context.Context) ([]*model.Role, error)
+}
 
-type repoUsers interface{}
+type repoUsers interface {
+	CreateUser(ctx context.Context, u *model.User) (int, error)
+	GetUser(ctx context.Context, id int) (*model.User, error)
+	ListUsers(ctx context.Context) ([]*model.User, error)
+}
 
-type repoItmes interface{}
+type repoItmes interface {
+	CreateItem(ctx context.Context, i *model.Item, userID int) (int, error)
+	GetItem(ctx context.Context, id int) (*model.Item, error)
+	ListItems(ctx context.Context) ([]*model.Item, error)
+	UpdateItem(ctx context.Context, i *model.Item, userID int) error
+	DeleteItem(ctx context.Context, id, userID int) error
+}
 
-type repoItemHistory interface{}
+type repoItemHistory interface {
+	ListItemHistory(ctx context.Context, itemID int) ([]*model.ItemHistory, error)
+	FilterItemHistory(ctx context.Context, itemID int, userID *int, actionType *string, from, to *time.Time) ([]*model.ItemHistory, error)
+}
 
 type Postgres struct {
 	DB *sqlx.DB
