@@ -9,6 +9,13 @@ import (
 	"github.com/Vladimirmoscow84/Warehouse_Control/internal/model"
 )
 
+// роли пользователей
+const (
+	RoleAdmin   = "admin"
+	RoleManager = "manager"
+	RoleViewer  = "viewer"
+)
+
 type roleService interface {
 	CreateRole(ctx context.Context, r *model.Role) (int, error)
 	GetRole(ctx context.Context, id int) (*model.Role, error)
