@@ -26,6 +26,8 @@ type userService interface {
 	CreateUser(ctx context.Context, u *model.User) (int, error)
 	GetUser(ctx context.Context, id int) (*model.User, error)
 	ListUsers(ctx context.Context) ([]*model.User, error)
+	GetUserByUsername(ctx context.Context, username string) (*model.User, error)
+	AuthenticateUser(ctx context.Context, username, password string) (userID int, roleName string, err error)
 }
 
 type itemService interface {

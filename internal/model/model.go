@@ -8,7 +8,7 @@ import (
 type Role struct {
 	ID          int       `json:"-" db:"id"`
 	RoleName    string    `json:"role_name" db:"role_name"`
-	Description string    `json:"description,omitempty" db:"description"`
+	Description *string   `json:"description" db:"description"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }

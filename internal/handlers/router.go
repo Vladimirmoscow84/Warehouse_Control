@@ -12,6 +12,13 @@ import (
 	"github.com/wb-go/wbf/ginext"
 )
 
+type userCreator interface {
+	CreateUser(ctx context.Context, u *model.User) (int, error)
+}
+type userAuthenticator interface {
+	AuthenticateUser(ctx context.Context, username, password string) (int, string, error)
+}
+
 type itemCreator interface {
 	CreateItem(ctx context.Context, i *model.Item, userID int) (int, error)
 }
@@ -32,11 +39,14 @@ type itemsDeleter interface {
 }
 
 type authService interface {
+	GenerateToken(userID int, role string, ttl time.Duration) (string, error)
 	CheckToken(token string) (*auth.UserClaims, error)
 }
 
 type Router struct {
 	Router       *ginext.Engine
+	userCreator  userCreator
+	userAuth     userAuthenticator
 	itemCreator  itemCreator
 	itemsGetter  itemsGetter
 	itemsUpdater itemsUpdater
@@ -44,9 +54,11 @@ type Router struct {
 	authService  authService
 }
 
-func New(router *ginext.Engine, iCreator itemCreator, iGetter itemsGetter, iUpdater itemsUpdater, iDeleter itemsDeleter, aService authService) *Router {
+func New(router *ginext.Engine, uCreator userCreator, uAuth userAuthenticator, iCreator itemCreator, iGetter itemsGetter, iUpdater itemsUpdater, iDeleter itemsDeleter, aService authService) *Router {
 	return &Router{
 		Router:       router,
+		userCreator:  uCreator,
+		userAuth:     uAuth,
 		itemCreator:  iCreator,
 		itemsGetter:  iGetter,
 		itemsUpdater: iUpdater,
@@ -69,6 +81,9 @@ func (r *Router) Routes(jwtSecret string) {
 
 	r.Router.GET("/items/:id/history", authMiddleware, r.ListItemHistoryHandler)
 	r.Router.GET("/items/:id/history/filter", authMiddleware, r.FilterItemsHistoryHandler)
+
+	r.Router.POST("/auth/register", r.RegisterHandler)
+	r.Router.POST("/auth/login", r.LoginHandler)
 
 	r.Router.GET("/", func(c *gin.Context) { c.File("./web/index.html") })
 	r.Router.Static("/static", "./web")

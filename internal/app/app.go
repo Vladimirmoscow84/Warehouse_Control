@@ -37,7 +37,7 @@ func Run() {
 
 	authService := auth.New(config.JWTSecret)
 	engine := ginext.New("release")
-	router := handlers.New(engine, service, service, service, service, authService)
+	router := handlers.New(engine, service, service, service, service, service, service, authService)
 	router.Routes(config.JWTSecret)
 
 	log.Printf("[app] starting server on %s", config.ServerAddress)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/Vladimirmoscow84/Warehouse_Control/internal/model"
@@ -21,7 +22,7 @@ func (p *Postgres) CreateItem(ctx context.Context, i *model.Item, userID int) (i
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(ctx, "SELECT set_config('app.current_user',$1, true)", userID)
+	_, err = tx.ExecContext(ctx, "SELECT set_config('app.current_user',$1, true)", fmt.Sprint(userID))
 	if err != nil {
 		log.Println("[postgres-item] error set userID")
 		return 0, err
@@ -98,7 +99,7 @@ func (p *Postgres) UpdateItem(ctx context.Context, i *model.Item, userID int) er
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(ctx, "SELECT set_config('app.current_user', $1, true)", userID)
+	_, err = tx.ExecContext(ctx, "SELECT set_config('app.current_user', $1, true)", fmt.Sprint(userID))
 	if err != nil {
 		log.Println("[postgres-item] error set userID")
 		return err
@@ -125,11 +126,12 @@ func (p *Postgres) DeleteItem(ctx context.Context, id, userID int) error {
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(ctx, "SELECT set_config('app.current_user', $1, true)", userID)
+	_, err = tx.ExecContext(ctx, "SELECT set_config('app.current_user', $1, true)", fmt.Sprint(userID))
 	if err != nil {
 		log.Println("[postgres-item] error of DELETE DB")
 		return err
 	}
+
 	query := `
 		DELETE FROM items
 		WHERE id=$1

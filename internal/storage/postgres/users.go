@@ -67,3 +67,20 @@ func (p *Postgres) ListUsers(ctx context.Context) ([]*model.User, error) {
 	}
 	return users, nil
 }
+
+func (p *Postgres) GetUserByUsername(ctx context.Context, username string) (*model.User, error) {
+	var u model.User
+	query := `
+		SELECT id, username, password_hash, email, role_id, created_at, updated_at
+		FROM users
+		WHERE username = $1
+	`
+	err := p.DB.GetContext(ctx, &u, query, username)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &u, nil
+}

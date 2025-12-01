@@ -19,6 +19,7 @@ type userStorage interface {
 	CreateUser(ctx context.Context, u *model.User) (int, error)
 	GetUser(ctx context.Context, id int) (*model.User, error)
 	ListUsers(ctx context.Context) ([]*model.User, error)
+	GetUserByUsername(ctx context.Context, username string) (*model.User, error)
 }
 
 type itemStorage interface {
@@ -77,6 +78,9 @@ func (s *Storage) GetUser(ctx context.Context, id int) (*model.User, error) {
 func (s *Storage) ListUsers(ctx context.Context) ([]*model.User, error) {
 	return s.users.ListUsers(ctx)
 }
+func (s *Storage) GetUserByUsername(ctx context.Context, username string) (*model.User, error) {
+	return s.users.GetUserByUsername(ctx, username)
+}
 
 func (s *Storage) CreateItem(ctx context.Context, i *model.Item, userID int) (int, error) {
 	return s.items.CreateItem(ctx, i, userID)
@@ -104,4 +108,28 @@ func (s *Storage) ListItemHistory(ctx context.Context, itemID int) ([]*model.Ite
 
 func (s *Storage) FilterItemHistory(ctx context.Context, itemID int, userID *int, actionType *string, from, to *time.Time) ([]*model.ItemHistory, error) {
 	return s.itemsHistory.FilterItemHistory(ctx, itemID, userID, actionType, from, to)
+}
+
+func (s *Storage) AuthenticateUser(ctx context.Context, username, password string) (int, string, error) {
+	if username == "" || password == "" {
+		return 0, "", errors.New("[storage] empty credentials")
+	}
+
+	user, err := s.GetUserByUsername(ctx, username)
+	if err != nil {
+		return 0, "", err
+	}
+	if user == nil {
+		return 0, "", errors.New("[storage] user not found")
+	}
+
+	role, err := s.GetRole(ctx, user.RoleID)
+	if err != nil {
+		return 0, "", err
+	}
+	if role == nil {
+		return 0, "", errors.New("[storage] role not found")
+	}
+
+	return user.ID, role.RoleName, nil
 }
