@@ -13,7 +13,7 @@ type Postgres struct {
 }
 
 func New(databaseURI string) (*Postgres, error) {
-	db, err := sqlx.Connect("sqlx", databaseURI)
+	db, err := sqlx.Connect("pgx", databaseURI)
 	if err != nil {
 		return nil, fmt.Errorf("[postgres] failed to connect to DB: %w", err)
 	}

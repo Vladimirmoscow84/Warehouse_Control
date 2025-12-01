@@ -10,8 +10,8 @@ import (
 
 // UserClaims хранит роль и индентификатор пользователя
 type UserClaims struct {
-	UserID int
-	Role   string
+	UserID int    `json:"user_id"`
+	Role   string `json:"role"`
 }
 
 // authentificator - интерфейс авторизации
@@ -30,12 +30,12 @@ func New(secret string) *JWTAuth {
 	return &JWTAuth{secret: []byte(secret)}
 }
 
-// GenereateToken генерирует токен
+// GenerateToken генерирует токен
 func (j *JWTAuth) GenerateToken(userID int, role string, ttl time.Duration) (string, error) {
 	claims := jwt.MapClaims{
-		"userID": userID,
-		"role":   role,
-		"exp":    time.Now().Add(ttl).Unix(),
+		"user_id": userID,
+		"role":    role,
+		"exp":     time.Now().Add(ttl).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -74,10 +74,10 @@ func (j *JWTAuth) CheckToken(tokenStr string) (*UserClaims, error) {
 	role, ok := claims["role"].(string)
 	if !ok {
 		log.Println("[auth] role not found in token")
-		return nil, errors.New("[auth]role not found in token")
+		return nil, errors.New("[auth] role not found in token")
 	}
 	return &UserClaims{
-		UserID: int(userID),
+		UserID: userID,
 		Role:   role,
 	}, nil
 }
