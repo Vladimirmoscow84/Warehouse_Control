@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Warehouse Control</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; }
+input, select, button { margin: 5px; }
+table { border-collapse: collapse; margin-top: 10px; }
+th, td { border: 1px solid #ccc; padding: 5px 10px; }
+th { background-color: #f2f2f2; }
+</style>
+</head>
+<body>
+
+<h2>Login</h2>
+<select id="roleSelect">
+    <option value="1">admin</option>
+    <option value="2">manager</option>
+    <option value="3">viewer</option>
+</select>
+<input type="text" id="username" placeholder="Username">
+<input type="password" id="password" placeholder="Password">
+<button onclick="login()">Login</button>
+<p id="loginStatus"></p>
+
+<hr>
+
+<h2>Items</h2>
+<button onclick="loadItems()">Refresh Items</button>
+<table id="itemsTable">
+    <thead>
+        <tr>
+            <th>ID</th><th>SKU</th><th>Title</th><th>Quantity</th><th>Price</th><th>Actions</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<h3>Add / Edit Item</h3>
+<input type="hidden" id="editId">
+<input type="text" id="sku" placeholder="SKU">
+<input type="text" id="title" placeholder="Title">
+<input type="number" id="quantity" placeholder="Quantity">
+<input type="number" step="0.01" id="price" placeholder="Price">
+<button onclick="saveItem()">Save Item</button>
+
+<hr>
+
+<h2>Item History</h2>
+<input type="number" id="historyItemId" placeholder="Item ID">
+<input type="date" id="historyFrom">
+<input type="date" id="historyTo">
+<select id="historyAction">
+    <option value="">Any Action</option>
+    <option value="insert">Insert</option>
+    <option value="update">Update</option>
+</select>
+<button onclick="loadHistory()">Load History</button>
+<table id="historyTable">
+    <thead>
+        <tr>
+            <th>ID</th><th>Action</th><th>Old Value</th><th>New Value</th><th>Changed By</th><th>Changed At</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script>
+let token = '';
+
+async function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const role_id = parseInt(document.getElementById('roleSelect').value);
+
+    const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, role_id })
+    });
+    const data = await res.json();
+    if (data.token) {
+        token = data.token;
+        document.getElementById('loginStatus').innerText = 'Logged in successfully';
+    } else {
+        document.getElementById('loginStatus').innerText = JSON.stringify(data);
+    }
+}
+
+async function loadItems() {
+    const res = await fetch('/items', {
+        headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const items = await res.json();
+    const tbody = document.querySelector('#itemsTable tbody');
+    tbody.innerHTML = '';
+    items.forEach(i => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${i.id}</td>
+            <td>${i.sku}</td>
+            <td>${i.title}</td>
+            <td>${i.quantity}</td>
+            <td>${i.price}</td>
+            <td>
+                <button onclick="editItem(${i.id}, '${i.sku}', '${i.title}', ${i.quantity}, ${i.price})">Edit</button>
+                <button onclick="deleteItem(${i.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function editItem(id, sku, title, quantity, price) {
+    document.getElementById('editId').value = id;
+    document.getElementById('sku').value = sku;
+    document.getElementById('title').value = title;
+    document.getElementById('quantity').value = quantity;
+    document.getElementById('price').value = price;
+}
+
+async function saveItem() {
+    const id = document.getElementById('editId').value;
+    const sku = document.getElementById('sku').value;
+    const title = document.getElementById('title').value;
+    const quantity = parseInt(document.getElementById('quantity').value);
+    const price = parseFloat(document.getElementById('price').value);
+
+    let url = '/items';
+    let method = 'POST';
+    if (id) {
+        url += '/' + id;
+        method = 'PUT';
+    }
+
+    const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ sku, title, quantity, price })
+    });
+    const data = await res.json();
+    console.log(data);
+    loadItems();
+}
+
+async function deleteItem(id) {
+    await fetch('/items/' + id, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+    });
+    loadItems();
+}
+
+async function loadHistory() {
+    const itemID = document.getElementById('historyItemId').value;
+    const from = document.getElementById('historyFrom').value;
+    const to = document.getElementById('historyTo').value;
+    const action = document.getElementById('historyAction').value;
+
+    const params = new URLSearchParams();
+    if (action) params.append('action_type', action);
+    if (from) params.append('from', new Date(from).toISOString());
+    if (to) params.append('to', new Date(to).toISOString());
+
+    const res = await fetch(`/items/${itemID}/history/filter?` + params.toString(), {
+        headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    const tbody = document.querySelector('#historyTable tbody');
+    tbody.innerHTML = '';
+    data.forEach(h => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${h.id}</td>
+            <td>${h.action_type}</td>
+            <td>${JSON.stringify(h.old_value)}</td>
+            <td>${JSON.stringify(h.new_value)}</td>
+            <td>${h.changed_by}</td>
+            <td>${h.changed_at}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+</script>
+</body>
+</html>
