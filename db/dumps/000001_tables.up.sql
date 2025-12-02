@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS items (
 
 CREATE TABLE IF NOT EXISTS item_history (
     id SERIAL PRIMARY KEY,
-    item_id INT NOT NULL REFERENCES items(id),
-    action_type VARCHAR(10) NOT NULL CHECK (action_type IN('insert', 'update', 'delete')),
+    item_id INT NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+    action_type VARCHAR(10) NOT NULL CHECK (action_type IN('insert', 'update')),
     old_value JSONB,
     new_value JSONB,
     changed_by INT REFERENCES users(id), 
@@ -86,12 +86,7 @@ BEGIN
     INSERT INTO item_history(item_id, action_type, old_value, new_value, changed_by)
     VALUES (OLD.id, 'update', to_jsonb(OLD.*), to_jsonb(NEW.*), v_user_id);
     RETURN NEW;
-
-  ELSIF (TG_OP = 'DELETE') THEN
-    INSERT INTO item_history(item_id, action_type, old_value, changed_by)
-    VALUES (OLD.id, 'delete', to_jsonb(OLD.*), v_user_id);
-    RETURN OLD;
-  END IF;
+    END IF;
 
   RETURN NULL;
 END;
