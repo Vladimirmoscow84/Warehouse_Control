@@ -35,11 +35,11 @@ type Item struct {
 }
 
 type ItemHistory struct {
-	ID         int             `json:"id" db:"id"`
-	ItemID     int             `json:"item_id" db:"item_id"`
-	ActionType string          `json:"action_type" db:"action_type"`
-	OldValue   json.RawMessage `json:"old_value" db:"old_value"`
-	NewValue   json.RawMessage `json:"new_value" db:"new_value"`
-	ChangedBy  int             `json:"changed_by" db:"changed_by"`
-	ChangedAt  time.Time       `json:"changed_at" db:"changed_at"`
+	ID         int              `json:"id" db:"id"`
+	ItemID     int              `json:"item_id" db:"item_id"`
+	ActionType string           `json:"action_type" db:"action_type"`
+	OldValue   *json.RawMessage `json:"old_value" db:"old_value"`
+	NewValue   *json.RawMessage `json:"new_value" db:"new_value"`
+	ChangedBy  *int             `json:"changed_by" db:"changed_by"`
+	ChangedAt  time.Time        `json:"changed_at" db:"changed_at"`
 }

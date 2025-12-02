@@ -3,13 +3,13 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (r *Router) FilterItemsHistoryHandler(c *gin.Context) {
-
 	idStr := c.Param("id")
 	itemID, err := strconv.Atoi(idStr)
 	if err != nil || itemID <= 0 {
@@ -17,9 +17,10 @@ func (r *Router) FilterItemsHistoryHandler(c *gin.Context) {
 		return
 	}
 
-	//опциональные query-параметры
+	// Опциональные query-параметры
 	var userIDPtr *int
 	if userIDStr := c.Query("user_id"); userIDStr != "" {
+		userIDStr = strings.TrimSpace(userIDStr)
 		userID, err := strconv.Atoi(userIDStr)
 		if err != nil || userID <= 0 {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
@@ -30,11 +31,12 @@ func (r *Router) FilterItemsHistoryHandler(c *gin.Context) {
 
 	var actionTypePtr *string
 	if actionType := c.Query("action_type"); actionType != "" {
+		actionType = strings.TrimSpace(actionType)
 		actionTypePtr = &actionType
 	}
 
 	var fromPtr, toPtr *time.Time
-	if fromStr := c.Query("from"); fromStr != "" {
+	if fromStr := strings.TrimSpace(c.Query("from")); fromStr != "" {
 		fromTime, err := time.Parse(time.RFC3339, fromStr)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid from date"})
@@ -42,7 +44,8 @@ func (r *Router) FilterItemsHistoryHandler(c *gin.Context) {
 		}
 		fromPtr = &fromTime
 	}
-	if toStr := c.Query("to"); toStr != "" {
+
+	if toStr := strings.TrimSpace(c.Query("to")); toStr != "" {
 		toTime, err := time.Parse(time.RFC3339, toStr)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid to date"})
