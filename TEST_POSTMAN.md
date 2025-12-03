@@ -1,41 +1,51 @@
--- Удаляем старые роли
-TRUNCATE TABLE roles RESTART IDENTITY CASCADE;
+## Тестирование API через Postman
 
--- Создаем роли заново
+После выполнения миграций перед запуском прграммы в sql панели для создания ролей введите (admin, manager, viewer):
+```
 INSERT INTO roles (role_name) VALUES ('admin');   -- id = 1
 INSERT INTO roles (role_name) VALUES ('manager'); -- id = 2
 INSERT INTO roles (role_name) VALUES ('viewer');  -- id = 3
+```
 
 После этого можешь проверить:
-
 SELECT id, role_name FROM roles;
 
-Ты должен увидеть:
-
+Результат  должен показать:
+```
  id | role_name
 ----+-----------
  1  | admin
  2  | manager
  3  | viewer
+ ```
 
 
- Эндпоинт:
-POST http://localhost:7777/auth/register
+Запустите сервис: go run cmd/server/main.go и убедитесь по логам в терминале, что сервис запустился
+```
+2025/12/02 18:07:24 [postgres] successfull connect to DB
+2025/12/02 18:07:24 [app] Connected to Postgres successfully
+2025/12/02 18:07:24 [app]storage initialized successfully
+2025/12/02 18:07:24 [app] Service initialized successfully
+2025/12/02 18:07:24 [app] starting server on :7777
+```
+Введите в адресной строке Postman адрес в соответствии с Вашим cfg (например http://localhost:7777) (при методе GET нажмите SEND - в поле body будет отображен html код стартовой страницы, это подтверждает удачное подключение к сервису)
 
+
+1. Авотризация пользователя
+POST /auth/register
+```
 Тело запроса (JSON):
-
 {
   "username": "admin",
   "password": "admin123",
   "email": "admin@example.com",
   "role_id": 1
 }
-
-
-Что проверяем:
+```
 Проверка валидности роли – role_id должен существовать в таблице roles.
 Хэширование пароля – пароль не сохраняется в открытом виде, только password_hash.
 Ответ сервера – успешная регистрация возвращает:
+```
 {
   "id": 1
 }
@@ -43,7 +53,9 @@ POST http://localhost:7777/auth/register
 {
   "error": "[service-user] invalid role_id"
 }
- Эндпоинт:
+```
+Получение токена по данным
+```
 POST /auth/login:
 {
   "username": "admin",
@@ -53,15 +65,17 @@ POST /auth/login:
 {
   "token": "<JWT_TOKEN>"
 }
+```
 <JWT_TOKEN> нужно будет использовать в заголовке Authorization для всех последующих запросов к /items:
 Authorization: Bearer <JWT_TOKEN>
 Это обеспечит проверку роли и аутентификацию.
 После успешного логина можно переходить к CRUD на /items.
 
-POST http://localhost:7777/items
+2. Внесение записи
+POST /items
 Authorization: Bearer <JWT_TOKEN>
 Content-Type: application/json
-
+```
 Тело запроса:
 {
   "sku": "TEST-001",
@@ -73,13 +87,14 @@ Content-Type: application/json
 {
   "id": 1
 }
-
+```
 можно добавить еще больше различных товаров для наглядности
 
-
-GET http://localhost:7777/items
+3. Список всех товаров
+GET /items
 Authorization: Bearer <JWT_TOKEN>
 Пример ответа:
+```
 [
     {
         "id": 1,
@@ -122,10 +137,12 @@ Authorization: Bearer <JWT_TOKEN>
         "updated_at": "2025-12-02T00:44:04.851308Z"
     }
 ]
-
-GET http://localhost:7777/items/3
+```
+4. Данные о конкретном товаре
+GET /items/3 (ваш номер товара id)
 Authorization: Bearer <JWT_TOKEN>
 Пример ответа:
+```
 {
     "id": 3,
     "sku": "TEST-003",
@@ -136,15 +153,14 @@ Authorization: Bearer <JWT_TOKEN>
     "created_at": "2025-12-02T00:43:45.07245Z",
     "updated_at": "2025-12-02T00:43:45.07245Z"
 }
+```
 
+4. Обновление товара
 
-Обновление товара (PUT /items/1)
-
-PUT http://localhost:7777/items/1
+PUT /items/1 (ваш номер товара id)
 Authorization: Bearer <JWT_TOKEN>
-
 Тело запроса:
-
+```
 {
   "sku": "TEST-001",
   "title": "Test Item Updated",
@@ -155,20 +171,25 @@ Authorization: Bearer <JWT_TOKEN>
 {
     "status": "item updated"
 }
+```
 
-DELETE http://localhost:7777/items/4
+5. Удаление товара
+ DELETE /items/4 (ваш номер товара id)
 Authorization: Bearer <JWT_TOKEN>
 Ожидаемый ответ:
+```
 {
   "status": "item deleted"
 }
+```
 После удаления можно проверить:
 Проверка, что товар исчез:
 GET /items
 
- история
- GET http://localhost:7777/items/3/history
 
+ 5. История товара (ваш номер товара id)
+ GET /items/3/history
+```
 Ожидаемый ответ:
  [
     {
@@ -190,8 +211,10 @@ GET /items
         "changed_at": "2025-12-02T00:43:27.051492Z"
     }
 ]
+```
 
-фильтрция историй
+6. Фильтрция историй
+```
 GET /items/:id/history/filter
 Параметры передаются через query string:
 user_id — фильтр по пользователю (целое число)
@@ -231,3 +254,4 @@ Authorization: Bearer <токен>
         "changed_at": "2025-12-02T13:26:53.339559Z"
     }
 ]
+```
